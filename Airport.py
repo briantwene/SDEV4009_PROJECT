@@ -6,6 +6,9 @@
 import random
 from Airplane import PassengerPlane, CargoPlane
 from cargo import Cargo
+from AppExecption import AirportException
+
+from util import createTable, generateDestination
 
 # Airport class definition
 class Airport:
@@ -14,11 +17,15 @@ class Airport:
     def __init__(self, name="Dublin Airport"):
         self.planes = []
         self.name = name
+        self.showFeed = False
 
     # setter methods
     # add a plane to the airport
     def addPlane(self, Plane):
         self.planes.append(Plane)
+
+    def setShowFeed(self, feed):
+        self.showFeed = feed
 
     # fuel a plane that is in the airport
     def fuelPlane(self):
@@ -38,19 +45,19 @@ class Airport:
             # if not
             if currentFuel < cost:
                 # then add the remainder of fuel
-                Plane.fuel(cost - currentFuel)
-                print(
-                    f"Plane {Plane.id} ({Plane.type}): {self.name} --> {Plane.destination['name']} added {cost - currentFuel} fuel, current tank = {Plane.fuelTank}"
-                )
+                Plane.addFuel()
+                if self.showFeed:
+                    print(
+                        f"Plane {Plane.id} ({Plane.type}): {self.name} --> {Plane.destination['name']} added fuel, current tank = {Plane.fuelTank}/{cost} ⛽\n"
+                    )
             # otherwise set the plane to On-Boarding status
             else:
-                print(
-                    f"Plane {Plane.id} ({Plane.type}): {self.name} --> {Plane.destination['name']} Fueling finished, setting status to On-Boarding"
-                )
+                if self.showFeed:
+                    print(
+                        f"Plane {Plane.id} ({Plane.type}): {self.name} --> {Plane.destination['name']} Fueling finished, setting status to On-Boarding\n"
+                    )
                 Plane.setStatus("On-Boarding")
         # if there are no planes at the airport
-        else:
-            print("There are no planes available")
 
     # function for loading passengers and cargo
     def onLoad(self, entity):
@@ -81,15 +88,17 @@ class Airport:
                 if currentWeight < Plane.model["maxCargoWeight"]:
                     # then add the package
                     Plane.addEntity(entity)
-                    print(
-                        f"Package, {entity.name} has been added to Plane {Plane.id} ({Plane.type}): {self.name} --> {Plane.destination['name']}"
-                    )
+                    if self.showFeed:
+                        print(
+                            f"Package, {entity.name} has been added to Plane {Plane.id} ({Plane.type}): {self.name} --> {Plane.destination['name']} 📦\n"
+                        )
 
                 # otherwise set the plane to the next stage as it is full
                 else:
-                    print(
-                        f"Plane {Plane.id} ({Plane.type}): {self.name} --> {Plane.destination['name']} loading Cargo finished. setting status to Ready"
-                    )
+                    if self.showFeed:
+                        print(
+                            f"Plane {Plane.id} ({Plane.type}): {self.name} --> {Plane.destination['name']} loading Cargo finished. setting status to Ready ✅\n"
+                        )
                     Plane.setStatus("Ready")
         # if not a cargo package then its a passenger
         else:
@@ -115,15 +124,17 @@ class Airport:
 
                     # add the passenger
                     Plane.addEntity(entity)
-                    print(
-                        f"Passenger, {entity.name} has been added to Plane {Plane.id} ({Plane.type}): {self.name} --> {Plane.destination['name']}"
-                    )
+                    if self.showFeed:
+                        print(
+                            f"Passenger, {entity.name} has been added to Plane {Plane.id} ({Plane.type}): {self.name} --> {Plane.destination['name']} 💼\n"
+                        )
 
                 # otherwise the plane is ready to fly
                 else:
-                    print(
-                        f"Plane {Plane.id} ({Plane.type}): {self.name} --> {Plane.destination['name']}, Boarding finished. setting status to Ready"
-                    )
+                    if self.showFeed:
+                        print(
+                            f"Plane {Plane.id} ({Plane.type}): {self.name} --> {Plane.destination['name']}, Boarding finished. setting status to Ready ✅\n"
+                        )
                     Plane.setStatus("Ready")
 
     # function for sending the take off signal
@@ -137,12 +148,11 @@ class Airport:
 
             # then select one and tell it to take off
             Plane = random.choice(planesReady)
-            Plane.takeOff()
-            print(
-                f"Plane {Plane.id} ({Plane.type}): {self.name} --> {Plane.destination['name']} has taken off"
-            )
-        else:
-            print("There are no planes that are ready")
+            Plane.setTakeOff()
+            if self.showFeed:
+                print(
+                    f"Plane {Plane.id} ({Plane.type}): {self.name} --> {Plane.destination['name']} has taken off 🛫\n"
+                )
 
     # function for allowing planes to land
     def sendLandingSignal(self):
@@ -154,17 +164,112 @@ class Airport:
         if planesInFlight:
             # select one and tell it to land
             Plane = random.choice(planesInFlight)
-            Plane.land()
+            Plane.setLanding()
+
+            # check if it needs maintenance
+            Plane.checkForMaintenance()
+
+            # fuel for the plane has been used
+            Plane.resetFuel()
+
+            Plane.setDestination(generateDestination())
 
             # also unload or unboard any passengers or packages
             Plane.unload()
+            if self.showFeed:
+                print(
+                    f"Plane {Plane.id} ({Plane.type}): {Plane.destination['name']} --> {self.name} has landed! 🛬\n"
+                )
 
-            print(
-                f"Plane {Plane.id} ({Plane.type}): {Plane.destination['name']} --> {self.name} has landed!"
-            )
+    def preformMaintenance(self):
+
+        # get all the planes that have a status of maintenance
+        planesOnMaintenance = list(
+            filter(lambda x: "Maintenance" in x.status, self.planes)
+        )
+
+        # and if there are any planes
+        if planesOnMaintenance:
+
+            # choose a random one and preform a check of it
+            plane = random.choice(planesOnMaintenance)
+
+            plane.doMaintenance()
+            if self.showFeed:
+                print(f"Plane {plane.id} ({plane.type}) --> {plane.getStatus()} ⚒️\n")
+
+        # then select one and do then maintenance check on it
+
+    # for sorting planes
+    def sortPlanes(self, sortKey):
+
+        sortedPlanes = None
+
+        # sort based on the key that was passed in
+        if sortKey == "dest":
+
+            sortedPlanes = sorted(self.planes)
+
+        elif sortKey == "id":
+
+            sortedPlanes = sorted(self.planes, key=lambda x: x.id)
+
+        elif sortKey == "stat":
+            sortedPlanes = sorted(self.planes, key=lambda x: x.status)
+
+        #  or dont do sorting if that key wasnt passed in
+        else:
+            sortedPlanes = self.planes
+
+        return createTable(sortedPlanes)
+
+    def searchForPlane(self, query):
+
+        # change the query to lower case for easier comparison
+        query = query.lower()
+
+        # function to help with searching
+        def searchFunc(plane):
+            # check if the query that the user entered matches any of the following
+            if (
+                query in plane.id.lower()
+                or query in plane.destination["name"].lower()
+                or query in plane.status.lower()
+            ):
+                return True
+            else:
+                return False
+
+        planesFound = list(filter(searchFunc, self.planes))
+
+        if planesFound:
+            return createTable(planesFound)
 
         else:
-            print("there are no planes in the air")
+            raise AirportException(
+                "Search Error", "couldn't find any planes with your query"
+            )
+
+    def viewPlane(self, planeId):
+
+        match = None
+
+        # check for if there is a plane that matches the id the user has entered
+        for plane in self.planes:
+            if plane.id.lower() == planeId.lower():
+                match = plane
+                break
+
+        if match:
+            print(plane)
+            if isinstance(plane, PassengerPlane):
+                return createTable(plane.passengers, "passengers")
+            else:
+                return createTable(plane.packages, "cargo")
+        else:
+            raise AirportException(
+                "Search Error", "couldn't find plane, enter a valid ID"
+            )
 
     # prints the state of the airport and the list of current planes
     def __str__(self) -> str:

@@ -4,9 +4,12 @@
 
 # import util libaries and functions
 from random import randint
+from threading import Thread, Event
+from interface import Interface
 import time
 from Airplane import CargoPlane, PassengerPlane
 from Airport import Airport
+
 from util import (
     generatePassenger,
     generateDestination,
@@ -16,30 +19,52 @@ from util import (
 )
 
 # main function definition
-def main():
+
+
+def main(stopEvent):
 
     # create airport instance
+    # and interface instanace
     myAirport = Airport()
+    myAirportConsole = Interface()
 
     # create planes and add them to the airport
 
-    myAirport.addPlane(
-        CargoPlane(generatePlaneId(), generateDestination(), 0, generateModel())
-    )
-    myAirport.addPlane(
-        PassengerPlane(generatePlaneId(), generateDestination(), 0, generateModel())
-    )
-
-    # print the airport status
-    print(myAirport)
+    for x in range(2):
+        myAirport.addPlane(
+            CargoPlane(
+                generatePlaneId(), generateDestination(), 0, generateModel(), "Cargo"
+            )
+        )
+        myAirport.addPlane(
+            PassengerPlane(
+                generatePlaneId(),
+                generateDestination(),
+                0,
+                generateModel(),
+                "Passenger",
+            )
+        )
 
     print("Initiating Airport Duties....\n")
-    time.sleep(5)
-    start = time.time()
 
-    # randomly do airport duties
+    # add the airport instance and stop flag event in the console for later use
+    myAirportConsole.setAirport(myAirport)
+    myAirportConsole.setEventFunc(stopEvent)
+
+    # start the airport duties on a separate thread
+    Thread(target=runDuties, args=(myAirport, stopEvent)).start()
+
+    # start the console for the user to interact with
+    myAirportConsole.cmdloop("Input commands here\n")
+
+
+# function for running airport duties
+def runDuties(myAirport, stopEvent):
+
     while 1:
-        action = randint(1, 5)
+
+        action = randint(1, 6)
 
         if action == 1:
             myAirport.fuelPlane()
@@ -51,14 +76,24 @@ def main():
             myAirport.sendTakeOffSignal()
         elif action == 5:
             myAirport.sendLandingSignal()
+        elif action == 6:
+            myAirport.preformMaintenance()
 
-        time.sleep(1)
+        # if the stop flag is set exit out of the loop
+        if stopEvent.is_set():
+            print("Halting Duties and exiting - Good Bye 👋\n")
+            break
 
-        # when ten or more seconds have passed display the status of the airport
-        if time.time() - start >= 10:
-            print(myAirport)
-            start = time.time()
+        time.sleep(0.5)
+        # start = time.time()
 
 
-# call main function
-main()
+try:
+    stopEvent = Event()
+    main(stopEvent)
+# if the user use Ctrl+C to force fully exit
+except KeyboardInterrupt:
+    # catch the exception
+    print("Force closing app gracefully!")
+    # tell the thread to stop
+    stopEvent.set()

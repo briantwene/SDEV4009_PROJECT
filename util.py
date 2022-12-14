@@ -3,28 +3,47 @@
 # Date: 04/10/2022
 
 # import needed classes and libraries
+from tabulate import tabulate
 import random
 import string
 from arrayNames import names
 from cargo import Passenger, Cargo
 
+
 # list of avaliable destinations and their fuel costs
 destinationMap = [
-    {"name": "New York", "cost": 10},
-    {"name": "Amsterdam", "cost": 2},
-    {"name": "Paris", "cost": 2},
-    {"name": "Berlin", "cost": 3},
-    {"name": "Dubai", "cost": 7},
-    {"name": "Rio de Janeiro", "cost": 10},
-    {"name": "Cairo", "cost": 8},
-    {"name": "Rome", "cost": 4},
-    {"name": "Warsaw", "cost": 4},
-    {"name": "New York", "cost": 10},
-    {"name": "Lisbon", "cost": 2},
-    {"name": "Madrid", "cost": 2},
-    {"name": "Montreal", "cost": 10},
-    {"name": "London", "cost": 1},
+    {"name": "New York (JFK)", "cost": 10},
+    {"name": "New York (LGA)", "cost": 10},
+    {"name": "New York (EWR)", "cost": 10},
+    {"name": "Amsterdam (AMS)", "cost": 2},
+    {"name": "Paris (CDG)", "cost": 2},
+    {"name": "Paris (ORY)", "cost": 2},
+    {"name": "Paris (BVA)", "cost": 2},
+    {"name": "Berlin (BER)", "cost": 3},
+    {"name": "Frankfurt (FRA)", "cost": 3},
+    {"name": "Munich (MUC)", "cost": 3},
+    {"name": "Dubai (DXB)", "cost": 7},
+    {"name": "Rio de Janeiro (GIG)", "cost": 10},
+    {"name": "Cairo (CAI)", "cost": 8},
+    {"name": "Rome (FCO)", "cost": 4},
+    {"name": "Warsaw (WAW)", "cost": 4},
+    {"name": "Orlando (MCO)", "cost": 10},
+    {"name": "Lisbon (LIS)", "cost": 2},
+    {"name": "Madrid (MAD)", "cost": 2},
+    {"name": "Barcelona (BCN)", "cost": 2},
+    {"name": "Montreal (YUL)", "cost": 10},
+    {"name": "London (LGW)", "cost": 1},
+    {"name": "London (STN)", "cost": 1},
+    {"name": "London (LTN)", "cost": 1},
+    {"name": "Edinburgh (EDI)", "cost": 1},
+    {"name": "Glasgow (GLA)", "cost": 1},
+    {"name": "Aberdeen (ABZ)", "cost": 1},
     {"name": "Belfast", "cost": 1},
+    {"name": "Perth (PER)", "cost": 15},
+    {"name": "Accra (ACC)", "cost": 8},
+    {"name": "Lagos (LOS)", "cost": 8},
+    {"name": "Tunis (TUN)", "cost": 4},
+    {"name": "Johannesburg (JNB)", "cost": 11},
 ]
 
 # list of packages to generate from
@@ -38,16 +57,23 @@ packageList = [
     "Mattress",
     "Bed",
     "RollerBlades",
+    "Toolkit",
+    "Gaming Console",
+    "T-shirt",
+    "SSD",
+    "HDD",
+    "Phone",
 ]
 
 # list of plane models to choose from
 planeModels = [
-    {"model": "Boeing 747-8", "maxPassenger": 5, "maxCargoWeight": 5},
-    {"model": "Airbus A380", "maxPassenger": 5, "maxCargoWeight": 5},
+    {"model": "Boeing 747-8", "maxPassenger": 200, "maxCargoWeight": 10},
+    {"model": "Airbus A380", "maxPassenger": 150, "maxCargoWeight": 10},
+    {"model": "Boeing 777-8X", "maxPassenger": 315, "maxCargoWeight": 10},
 ]
 
 # list of passenger classes to choose from
-classes = ["Business", "Economy"]
+classes = ["Business", "Premium", "Economy"]
 
 # list of couriers to choose from
 couriers = ["DHL", "UPS", "FedEx", "TNT", "Amazon Prime"]
@@ -98,3 +124,60 @@ def generatePackage():
 
     # then return a package object with this data
     return Cargo(packageId, name, weight, courier)
+
+
+# function for creating the table
+def createTable(data, type="planes"):
+
+    col_names = []
+    tableData = []
+
+    # generate table data based on the type
+    match (type):
+
+        # if an array of planes
+        case "planes":
+            col_names = ["ID", "Destination", "Status", "Model", "Type"]
+            for plane in data:
+
+                tableData.append(
+                    [
+                        plane.id,
+                        plane.destination["name"],
+                        plane.status,
+                        plane.model["model"],
+                        plane.type,
+                    ]
+                )
+        # if an array of passengers
+        case "passengers":
+            col_names = ["Name", "Class", "Age"]
+            for passenger in data:
+
+                tableData.append(
+                    [
+                        passenger.name,
+                        passenger.seatClass,
+                        passenger.age,
+                    ]
+                )
+        # if an array of cargo
+        case "cargo":
+            col_names = ["Package ID", "Name", "Weight (Kg)", "Courier"]
+            for cargo in data:
+
+                tableData.append(
+                    [
+                        cargo.id,
+                        cargo.name,
+                        cargo.weight,
+                        cargo.courier,
+                    ]
+                )
+
+    # first loop through the array
+
+    # the for each item in the array will make an array that would have all of the information
+
+    # return table object with the data
+    return tabulate(tableData, headers=col_names)
