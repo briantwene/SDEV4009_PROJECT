@@ -6,7 +6,7 @@
 import random
 from Airplane import PassengerPlane, CargoPlane
 from cargo import Cargo
-from AppExecption import AirportException
+from AirportException import AirportException
 
 from util import createTable, generateDestination
 

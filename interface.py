@@ -1,11 +1,6 @@
 from cmd import Cmd
-from random import randint
-import sys
-import time
 import keyboard
-from AppExecption import AirportException
-
-from util import generatePackage, generatePassenger
+from AirportException import AirportException
 
 
 # interface class declaration extends the CMD object
@@ -26,7 +21,7 @@ class Interface(Cmd):
 
     # for the "feed" command
     def do_feed(self, args):
-        print("Press Q key to quit feed")
+        print("Press Q key to quit feed\n\n")
         self.myAirport.setShowFeed(True)
 
         while not keyboard.is_pressed("q"):
@@ -34,7 +29,7 @@ class Interface(Cmd):
 
         self.myAirport.setShowFeed(False)
 
-        print("Live Feed has stopped showing - duties running in background")
+        print("Live Feed has stopped showing - duties running in background\n\n")
 
     # for the "list" command
     def do_list(self, sortKey):
